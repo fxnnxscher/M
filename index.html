@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Eine wichtige Frage 💌</title>
+  <title>Eine kleine Mission 💌</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -12,174 +12,356 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 24px;
+      padding: 18px;
       color: #542b3b;
       font-family: system-ui, sans-serif;
       background: linear-gradient(135deg, #ffe2ec, #fff5dc);
     }
 
     main {
-      width: min(100%, 520px);
-      padding: 32px 24px;
+      width: min(100%, 500px);
+      padding: 28px 22px;
       text-align: center;
-      background: #ffffffde;
-      border: 1px solid #fff;
+      background: #ffffffed;
+      border: 1px solid white;
       border-radius: 24px;
       box-shadow: 0 16px 50px #85435b20;
     }
 
-    .heart { font-size: 44px; }
-    h1 { margin: 8px 0; font-size: clamp(26px, 7vw, 36px); }
+    h1 { font-size: clamp(26px, 7vw, 36px); }
     p { line-height: 1.6; }
-
-    #actions {
-      position: relative;
-      height: 110px;
-      margin-top: 20px;
-    }
+    .emoji { font-size: 48px; }
 
     button {
       border: 0;
       border-radius: 999px;
-      padding: 13px 24px;
+      padding: 13px 22px;
+      margin: 5px;
       font: inherit;
       font-weight: 700;
+      color: white;
+      background: #ed6b91;
       cursor: pointer;
       box-shadow: 0 5px 14px #542b3b20;
     }
 
-    #yes {
-      position: absolute;
-      top: 20px;
-      left: 15%;
-      color: white;
-      background: #ed6b91;
+    button:focus-visible {
+      outline: 3px solid #75445a;
+      outline-offset: 3px;
     }
 
-    #no {
-      position: absolute;
-      top: 20px;
-      right: 15%;
+    .secondary {
       color: #542b3b;
       background: #f3e7ec;
     }
 
-    #success { display: none; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    canvas {
+      display: block;
+      width: min(100%, 360px);
+      height: auto;
+      aspect-ratio: 360 / 500;
+      margin: 18px auto 10px;
+      border: 3px solid white;
+      border-radius: 18px;
+      background: #c9f3ff;
+      touch-action: manipulation;
+    }
+
+    .hint, #quizFeedback { min-height: 1.5em; }
+    .answer {
+      display: block;
+      width: min(100%, 340px);
+      margin: 10px auto;
+    }
+
+    #noButton { background: #f3e7ec; color: #542b3b; }
     #success h1 { color: #d34f7a; }
-
-    hr {
-      margin: 28px 0 20px;
-      border: 0;
-      border-top: 1px solid #f1dce4;
-    }
-
-    #share input {
-      width: 100%;
-      margin: 8px 0;
-      padding: 11px;
-      border: 1px solid #e8cbd6;
-      border-radius: 10px;
-      font: inherit;
-    }
-
-    #makeQr {
-      color: white;
-      background: #75445a;
-    }
-
-    #qr { margin-top: 16px; }
-    #qr canvas { max-width: 100%; }
-    #status { min-height: 1.5em; font-size: 14px; }
   </style>
 </head>
 <body>
   <main>
-    <section id="question">
-      <div class="heart">💌</div>
-      <p>Ich habe eine kleine, aber ziemlich wichtige Frage für dich …</p>
-      <h1>Willst du meine Freundin sein?</h1>
-      <p>Versprochen: Mit mir gibt’s gute Snacks und mittelgute Wortwitze.</p>
-
-      <div id="actions">
-        <button id="yes">Ja! 💖</button>
-        <button id="no">Nein 🙈</button>
-      </div>
+    <section id="startScreen" class="screen active">
+      <div class="emoji">💌</div>
+      <h1>Eine kleine Mission</h1>
+      <p>Ein paar Hindernisse, ein paar Fragen und am Ende wartet etwas Wichtiges auf dich.</p>
+      <button id="startButton">Spiel starten ✨</button>
     </section>
 
-    <section id="success">
-      <div class="heart">🎉🥰🎉</div>
+    <section id="gameScreen" class="screen">
+      <h1>Flieg zum Herzen!</h1>
+      <p>Tippe auf das Spielfeld, um zu fliegen. Schaffst du 10 Punkte?</p>
+      <canvas id="game" width="360" height="500" aria-label="Flappy-Herz-Spiel"></canvas>
+      <p id="gameStatus" class="hint">Tippe oder klicke zum Fliegen.</p>
+      <button id="gameAction" hidden></button>
+    </section>
+
+    <section id="quizScreen" class="screen">
+      <div class="emoji">💭</div>
+      <p id="quizProgress"></p>
+      <h1 id="quizQuestion"></h1>
+      <div id="answers"></div>
+      <p id="quizFeedback" aria-live="polite"></p>
+      <button id="nextQuestion" hidden>Weiter 💌</button>
+    </section>
+
+    <section id="finalScreen" class="screen">
+      <div class="emoji">💖</div>
+      <p>Du hast es bis hierher geschafft. Jetzt kommt die wichtigste Frage …</p>
+      <h1>Willst du meine Freundin sein?</h1>
+      <p>Versprochen: Mit mir gibt’s gute Snacks und mittelgute Wortwitze.</p>
+      <button id="yesButton">Ja! 💖</button>
+      <button id="noButton" class="secondary">Nein 🙈</button>
+    </section>
+
+    <section id="success" class="screen">
+      <div class="emoji">🎉🥰🎉</div>
       <h1>Yay! Du hast Ja gesagt!</h1>
       <p>Damit bist du jetzt offiziell meine Lieblingsperson.<br>
         Einlösbar gegen eine Umarmung und einen Snack deiner Wahl. 💕</p>
     </section>
 
-    <hr>
-
-    <section id="share">
-      <strong>QR-Code für diese Seite erstellen</strong>
-      <p>Gib hier den öffentlichen Hosting-Link ein und erstelle den QR-Code.</p>
-      <input id="pageUrl" type="url" placeholder="https://deinname.github.io/projekt/">
-      <button id="makeQr">QR-Code erstellen</button>
-      <div id="qr"></div>
-      <div id="status"></div>
+    <section id="declined" class="screen">
+      <div class="emoji">🌷</div>
+      <h1>Danke für deine ehrliche Antwort.</h1>
+      <p>Alles gut — du bist trotzdem ein toller Mensch. 💛</p>
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
-    const noButton = document.querySelector("#no");
-    const actions = document.querySelector("#actions");
+    // Passe Fragen, Antwortmöglichkeiten und correctIndex an dich an.
+    // correctIndex zählt ab 0: 0 = erste Antwort, 1 = zweite usw.
+    const quizQuestions = [
+      {
+        question: "Was würde ich bei einem gemütlichen Abend eher wählen?",
+        answers: ["Pizza 🍕", "Sushi 🍣", "Tacos 🌮"],
+        correctIndex: 0
+      },
+      {
+        question: "Welches Dessert würde ich am ehesten nehmen?",
+        answers: ["Eis 🍦", "Kuchen 🍰", "Obstsalat 🍓"],
+        correctIndex: 0
+      },
+      {
+        question: "Was wäre mein perfekter gemeinsamer Ausflug?",
+        answers: ["Ein Spaziergang 🌳", "Ein Filmabend 🎬", "Ein Abenteuer ✨"],
+        correctIndex: 2
+      }
+    ];
 
-    function moveNoButton() {
-      const buttonWidth = noButton.offsetWidth;
-      const buttonHeight = noButton.offsetHeight;
-      const minLeft = Math.min(actions.clientWidth * 0.52, actions.clientWidth - buttonWidth);
-      const maxLeft = actions.clientWidth - buttonWidth;
-      const maxTop = actions.clientHeight - buttonHeight;
+    const screens = document.querySelectorAll(".screen");
 
-      noButton.style.right = "auto";
-      noButton.style.left = `${minLeft + Math.random() * Math.max(0, maxLeft - minLeft)}px`;
-      noButton.style.top = `${Math.random() * Math.max(0, maxTop)}px`;
+    function showScreen(id) {
+      screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
     }
 
-    noButton.addEventListener("mouseenter", moveNoButton);
-    noButton.addEventListener("click", moveNoButton);
+    document.querySelector("#startButton").addEventListener("click", startGame);
 
-    document.querySelector("#yes").addEventListener("click", () => {
-      document.querySelector("#question").style.display = "none";
-      document.querySelector("#success").style.display = "block";
+    // --- Flappy-Herz-Spiel ---
+    const canvas = document.querySelector("#game");
+    const ctx = canvas.getContext("2d");
+    const gameStatus = document.querySelector("#gameStatus");
+    const gameAction = document.querySelector("#gameAction");
+
+    let bird, pipes, score, lastTime, spawnTimer, gameRunning;
+    let victoryStartedAt = 0;
+    let won = false;
+    let animationId;
+
+    function startGame() {
+      showScreen("gameScreen");
+      bird = { x: 78, y: 240, velocity: 0 };
+      pipes = [];
+      score = 0;
+      spawnTimer = 0;
+      lastTime = 0;
+      gameRunning = true;
+      won = false;
+      gameStatus.textContent = "Punkte: 0 / 10 — tippe zum Fliegen!";
+      gameAction.hidden = true;
+      cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function flap(event) {
+      if (event) event.preventDefault();
+      if (gameRunning && !won) bird.velocity = -330;
+    }
+
+    canvas.addEventListener("pointerdown", flap);
+    window.addEventListener("keydown", event => {
+      if (event.code === "Space" && gameRunning) flap(event);
     });
 
-    const pageUrl = document.querySelector("#pageUrl");
-    if (location.protocol === "https:" || location.protocol === "http:") {
-      pageUrl.value = location.href;
+    function addPipe() {
+      const gap = 160;
+      const gapTop = 65 + Math.random() * 210;
+      pipes.push({ x: 380, width: 58, gapTop, gap, scored: false });
     }
 
-    document.querySelector("#makeQr").addEventListener("click", async () => {
-      const status = document.querySelector("#status");
-      const qr = document.querySelector("#qr");
-      const url = pageUrl.value.trim();
+    function gameLoop(timestamp) {
+      const dt = Math.min((timestamp - (lastTime || timestamp)) / 1000, 0.035);
+      lastTime = timestamp;
 
-      qr.replaceChildren();
+      if (gameRunning && !won) {
+        bird.velocity += 920 * dt;
+        bird.y += bird.velocity * dt;
+        spawnTimer += dt;
 
-      if (!url || !/^https?:\/\//i.test(url)) {
-        status.textContent = "Bitte gib einen gültigen öffentlichen http(s)-Link ein.";
-        return;
+        if (spawnTimer > 1.55) {
+          addPipe();
+          spawnTimer = 0;
+        }
+
+        for (const pipe of pipes) {
+          pipe.x -= 155 * dt;
+
+          if (!pipe.scored && pipe.x + pipe.width < bird.x) {
+            pipe.scored = true;
+            score++;
+            gameStatus.textContent = `Punkte: ${score} / 10`;
+
+            if (score >= 10) {
+              won = true;
+              victoryStartedAt = timestamp;
+              gameStatus.textContent = "Unglaublich! Das Herz wartet auf dich …";
+            }
+          }
+        }
+
+        pipes = pipes.filter(pipe => pipe.x + pipe.width > -5);
+
+        if (!won && hitsObstacle()) {
+          gameRunning = false;
+          gameStatus.textContent = `Fast geschafft! Dein Punktestand: ${score}.`;
+          gameAction.textContent = "Nochmal spielen ↻";
+          gameAction.hidden = false;
+          gameAction.onclick = startGame;
+        }
       }
 
-      if (!window.QRCode) {
-        status.textContent = "Der QR-Code-Dienst konnte nicht geladen werden. Prüfe deine Internetverbindung.";
-        return;
+      drawGame();
+
+      if (won && timestamp - victoryStartedAt > 900) {
+        gameRunning = false;
+        gameStatus.textContent = "Du bist ins Herz geflogen! 💖";
+        gameAction.textContent = "Weiter zum Quiz →";
+        gameAction.hidden = false;
+        gameAction.onclick = startQuiz;
       }
 
-      try {
-        const canvas = document.createElement("canvas");
-        await QRCode.toCanvas(canvas, url, { width: 220, margin: 2 });
-        qr.appendChild(canvas);
-        status.textContent = "Fertig! Der QR-Code führt zu deiner Seite.";
-      } catch {
-        status.textContent = "Der QR-Code konnte nicht erstellt werden.";
+      if (gameRunning || won) animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function hitsObstacle() {
+      const radius = 13;
+      if (bird.y - radius < 0 || bird.y + radius > canvas.height) return true;
+
+      return pipes.some(pipe => {
+        const overlapsX = bird.x + radius > pipe.x && bird.x - radius < pipe.x + pipe.width;
+        const outsideGap = bird.y - radius < pipe.gapTop ||
+          bird.y + radius > pipe.gapTop + pipe.gap;
+        return overlapsX && outsideGap;
+      });
+    }
+
+    function drawHeart(x, y, size, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(size / 32, size / 32);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, 28);
+      ctx.bezierCurveTo(-38, 4, -18, -16, 0, -3);
+      ctx.bezierCurveTo(18, -16, 38, 4, 0, 28);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, "#bdeeff");
+      sky.addColorStop(1, "#fff5dc");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Zielherz erscheint, wenn die zehn Punkte geschafft sind.
+      if (won) drawHeart(278, 235, 78, "#ed6b91");
+
+      ctx.fillStyle = "#83c98e";
+      for (const pipe of pipes) {
+        ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
+        ctx.fillRect(pipe.x, pipe.gapTop + pipe.gap, pipe.width, canvas.height);
       }
+
+      drawHeart(bird.x, bird.y, 26, "#d94f7d");
+
+      ctx.fillStyle = "#542b3b";
+      ctx.font = "bold 22px system-ui";
+      ctx.textAlign = "left";
+      ctx.fillText(`${score} / 10`, 16, 32);
+    }
+
+    // --- Quiz: Frage für Frage ---
+    let questionIndex = 0;
+    const answersElement = document.querySelector("#answers");
+    const feedbackElement = document.querySelector("#quizFeedback");
+    const nextButton = document.querySelector("#nextQuestion");
+
+    function startQuiz() {
+      questionIndex = 0;
+      showScreen("quizScreen");
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const item = quizQuestions[questionIndex];
+      document.querySelector("#quizProgress").textContent =
+        `Frage ${questionIndex + 1} von ${quizQuestions.length}`;
+      document.querySelector("#quizQuestion").textContent = item.question;
+      answersElement.replaceChildren();
+      feedbackElement.textContent = "";
+      nextButton.hidden = true;
+
+      item.answers.forEach((answer, index) => {
+        const button = document.createElement("button");
+        button.className = "answer";
+        button.textContent = answer;
+        button.addEventListener("click", () => {
+          answersElement.querySelectorAll("button").forEach(option => option.disabled = true);
+
+          if (index === item.correctIndex) {
+            feedbackElement.textContent = "Richtig! Du kennst mich ja ziemlich gut 💕";
+          } else {
+            feedbackElement.textContent = "Nicht ganz — aber der Versuch zählt 😄";
+          }
+
+          nextButton.hidden = false;
+        });
+        answersElement.appendChild(button);
+      });
+    }
+
+    nextButton.addEventListener("click", () => {
+      questionIndex++;
+      if (questionIndex < quizQuestions.length) {
+        renderQuestion();
+      } else {
+        showScreen("finalScreen");
+      }
+    });
+
+    // --- Die letzte Frage ---
+    document.querySelector("#yesButton").addEventListener("click", () => {
+      showScreen("success");
+    });
+
+    document.querySelector("#noButton").addEventListener("click", () => {
+      showScreen("declined");
     });
   </script>
 </body>
