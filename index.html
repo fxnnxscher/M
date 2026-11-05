@@ -58,7 +58,7 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
-    canvas {
+    canvas#game {
       display: block;
       width: min(100%, 360px);
       height: auto;
@@ -71,14 +71,38 @@
     }
 
     .hint, #quizFeedback { min-height: 1.5em; }
+
     .answer {
       display: block;
       width: min(100%, 340px);
       margin: 10px auto;
     }
 
+    .reveal {
+      opacity: 0;
+      transform: translateY(-16px);
+      transition: opacity 700ms ease, transform 700ms ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     #noButton { background: #f3e7ec; color: #542b3b; }
-    #success h1 { color: #d34f7a; }
+
+    #celebrationCanvas {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -92,8 +116,8 @@
 
     <section id="gameScreen" class="screen">
       <h1>Schaffst du 10 Punkte?</h1>
-      <p>Tippe auf das Spielfeld, um zu fliegen.</p>
-      <canvas id="game" width="360" height="500" aria-label="Flappy-Herz-Spiel"></canvas>
+      <p>Tippe auf das Spielfeld, um den Vogel fliegen zu lassen.</p>
+      <canvas id="game" width="360" height="500" aria-label="Flappy-Bird-Spiel"></canvas>
       <p id="gameStatus" class="hint">Tippe oder klicke zum Fliegen.</p>
       <button id="gameAction" hidden></button>
     </section>
@@ -108,27 +132,24 @@
     </section>
 
     <section id="finalScreen" class="screen">
-      <div class="emoji">💖</div>
-      <p>Du hast es bis hierher geschafft. Jetzt kommt die wichtigste Frage …</p>
-      <h1>Willst du meine Freundin sein?</h1>
-      <p>Versprochen: Mit mir gibt’s gute Snacks und mittelgute Wortwitze.</p>
-      <button id="yesButton">Ja! 💖</button>
-      <button id="noButton" class="secondary">Nein 🙈</button>
-    </section>
-
-    <section id="success" class="screen">
-      <div class="emoji">🎉🥰🎉</div>
-      <h1>Yay! Du hast Ja gesagt!</h1>
-      <p>Damit bist du jetzt offiziell meine Lieblingsperson.<br>
-        Einlösbar gegen eine Umarmung und einen Snack deiner Wahl. 💕</p>
-    </section>
-
-    <section id="declined" class="screen">
-      <div class="emoji">🌷</div>
-      <h1>Danke für deine ehrliche Antwort.</h1>
-      <p>Alles gut — du bist trotzdem ein toller Mensch. 💛</p>
+      <div class="emoji reveal" data-delay="0">💌</div>
+      <p class="reveal" data-delay="0">
+        Du hast es bis hierher geschafft. Jetzt kommt die wichtigste Frage …
+      </p>
+      <h1 class="reveal" data-delay="2000">Willst du meine Freundin sein?</h1>
+      <p class="reveal" data-delay="4000">
+        Ich bin nicht nur beim Training dein Spotter sondern auch im Alltag möchte ich gerne derjenige sein,
+        der dir den Rücken freihält (oder die Gewichte) <br> <p>:)</p>
+      </p>
+      <div id="finalButtons" class="reveal" data-delay="6000">
+        <button id="yesButton">Ja! 💖</button>
+        <button id="noButton" class="secondary">Nein 🙈</button>
+      </div>
+      <h2 id="yesMessage" hidden>Yay! Du hast Ja gesagt! 🥰</h2>
     </section>
   </main>
+
+  <canvas id="celebrationCanvas" aria-hidden="true"></canvas>
 
   <script>
     // Passe Fragen, Antwortmöglichkeiten und correctIndex an dich an.
@@ -140,7 +161,7 @@
         correctIndex: 1
       },
       {
-        question: "Welcher Whey Geschmack ist mein Favorit?",
+        question: "Welcher Whey-Geschmack ist mein Favorit?",
         answers: ["Eiskaffee", "Milchschokolade", "Weiße Schokolade"],
         correctIndex: 2
       },
@@ -159,7 +180,7 @@
 
     document.querySelector("#startButton").addEventListener("click", startGame);
 
-    // --- Flappy-Herz-Spiel ---
+    // --- Flappy-Bird-Spiel ---
     const canvas = document.querySelector("#game");
     const ctx = canvas.getContext("2d");
     const gameStatus = document.querySelector("#gameStatus");
@@ -191,6 +212,7 @@
     }
 
     canvas.addEventListener("pointerdown", flap);
+
     window.addEventListener("keydown", event => {
       if (event.code === "Space" && gameRunning) flap(event);
     });
@@ -226,7 +248,7 @@
             if (score >= 10) {
               won = true;
               victoryStartedAt = timestamp;
-              gameStatus.textContent = "Unglaublich! Das Herz wartet auf dich …";
+              gameStatus.textContent = "Geschafft! Gleich geht es weiter …";
             }
           }
         }
@@ -246,37 +268,72 @@
 
       if (won && timestamp - victoryStartedAt > 900) {
         gameRunning = false;
+        won = false;
         gameStatus.textContent = "Du hast es geschafft!";
         gameAction.textContent = "Weiter zum Quiz →";
         gameAction.hidden = false;
         gameAction.onclick = startQuiz;
       }
 
-      if (gameRunning || won) animationId = requestAnimationFrame(gameLoop);
+      if (gameRunning || won) {
+        animationId = requestAnimationFrame(gameLoop);
+      }
     }
 
     function hitsObstacle() {
       const radius = 13;
-      if (bird.y - radius < 0 || bird.y + radius > canvas.height) return true;
+
+      if (bird.y - radius < 0 || bird.y + radius > canvas.height) {
+        return true;
+      }
 
       return pipes.some(pipe => {
-        const overlapsX = bird.x + radius > pipe.x && bird.x - radius < pipe.x + pipe.width;
-        const outsideGap = bird.y - radius < pipe.gapTop ||
+        const overlapsX =
+          bird.x + radius > pipe.x && bird.x - radius < pipe.x + pipe.width;
+        const outsideGap =
+          bird.y - radius < pipe.gapTop ||
           bird.y + radius > pipe.gapTop + pipe.gap;
+
         return overlapsX && outsideGap;
       });
     }
 
-    function drawHeart(x, y, size, color) {
+    function drawBird(x, y, velocity) {
       ctx.save();
       ctx.translate(x, y);
-      ctx.scale(size / 32, size / 32);
-      ctx.fillStyle = color;
+      ctx.rotate(Math.max(-0.45, Math.min(0.55, velocity / 700)));
+
+      // Körper und Flügel
+      ctx.fillStyle = "#ffd34e";
       ctx.beginPath();
-      ctx.moveTo(0, 28);
-      ctx.bezierCurveTo(-38, 4, -18, -16, 0, -3);
-      ctx.bezierCurveTo(18, -16, 38, 4, 0, 28);
+      ctx.ellipse(0, 0, 16, 13, 0, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.fillStyle = "#f3a83b";
+      ctx.beginPath();
+      ctx.ellipse(-4, 4, 8, 5, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Schnabel
+      ctx.fillStyle = "#f07a45";
+      ctx.beginPath();
+      ctx.moveTo(12, -2);
+      ctx.lineTo(24, 2);
+      ctx.lineTo(12, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Auge
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(7, -6, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#302333";
+      ctx.beginPath();
+      ctx.arc(9, -6, 2, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
     }
 
@@ -289,16 +346,18 @@
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Zielherz erscheint, wenn die zehn Punkte geschafft sind.
-      if (won) drawHeart(278, 235, 78, "#ed6b91");
-
+      // Hindernisse mit kleinen Kanten
       ctx.fillStyle = "#83c98e";
       for (const pipe of pipes) {
         ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
-        ctx.fillRect(pipe.x, pipe.gapTop + pipe.gap, pipe.width, canvas.height);
+        ctx.fillRect(pipe.x - 4, pipe.gapTop - 16, pipe.width + 8, 16);
+
+        const bottomY = pipe.gapTop + pipe.gap;
+        ctx.fillRect(pipe.x, bottomY, pipe.width, canvas.height - bottomY);
+        ctx.fillRect(pipe.x - 4, bottomY, pipe.width + 8, 16);
       }
 
-      drawHeart(bird.x, bird.y, 26, "#d94f7d");
+      drawBird(bird.x, bird.y, bird.velocity);
 
       ctx.fillStyle = "#542b3b";
       ctx.font = "bold 22px system-ui";
@@ -320,6 +379,7 @@
 
     function renderQuestion() {
       const item = quizQuestions[questionIndex];
+
       document.querySelector("#quizProgress").textContent =
         `Frage ${questionIndex + 1} von ${quizQuestions.length}`;
       document.querySelector("#quizQuestion").textContent = item.question;
@@ -331,37 +391,178 @@
         const button = document.createElement("button");
         button.className = "answer";
         button.textContent = answer;
-        button.addEventListener("click", () => {
-          answersElement.querySelectorAll("button").forEach(option => option.disabled = true);
 
-          if (index === item.correctIndex) {
-            feedbackElement.textContent = "Richtig! Strong gespielt 💪";
-          } else {
-            feedbackElement.textContent = "Nicht ganz — aber netter Versuch 😄";
-          }
+        button.addEventListener("click", () => {
+          answersElement.querySelectorAll("button")
+            .forEach(option => option.disabled = true);
+
+          feedbackElement.textContent = index === item.correctIndex
+            ? "Richtig! Strong gespielt 💪"
+            : "Nicht ganz — aber netter Versuch 😄";
 
           nextButton.hidden = false;
         });
+
         answersElement.appendChild(button);
       });
     }
 
     nextButton.addEventListener("click", () => {
       questionIndex++;
+
       if (questionIndex < quizQuestions.length) {
         renderQuestion();
       } else {
         showScreen("finalScreen");
+        revealFinalQuestion();
       }
     });
 
-    // --- Die letzte Frage ---
-    document.querySelector("#yesButton").addEventListener("click", () => {
-      showScreen("success");
-    });
+    // Die Hauptfrage erscheint nacheinander mit jeweils zwei Sekunden Abstand.
+    let revealTimers = [];
 
-    document.querySelector("#noButton").addEventListener("click", () => {
-      showScreen("declined");
+    function revealFinalQuestion() {
+      revealTimers.forEach(clearTimeout);
+      revealTimers = [];
+
+      const elements = document.querySelectorAll("#finalScreen .reveal");
+      elements.forEach(element => element.classList.remove("visible"));
+
+      elements.forEach(element => {
+        const delay = Number(element.dataset.delay);
+        const timer = setTimeout(() => element.classList.add("visible"), delay);
+        revealTimers.push(timer);
+      });
+
+      document.querySelector("#yesMessage").hidden = true;
+    }
+
+    // Der Nein-Button springt an eine andere Stelle im sichtbaren Fenster.
+    const noButton = document.querySelector("#noButton");
+
+    function moveNoButton(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const margin = 12;
+      const maxLeft = Math.max(margin, window.innerWidth - noButton.offsetWidth - margin);
+      const maxTop = Math.max(margin, window.innerHeight - noButton.offsetHeight - margin);
+
+      noButton.style.position = "fixed";
+      noButton.style.zIndex = "20";
+      noButton.style.left = `${margin + Math.random() * (maxLeft - margin)}px`;
+      noButton.style.top = `${margin + Math.random() * (maxTop - margin)}px`;
+    }
+
+    noButton.addEventListener("pointerenter", moveNoButton);
+    noButton.addEventListener("click", moveNoButton);
+
+    // --- Ja: Feier auf derselben Seite ---
+    const celebrationCanvas = document.querySelector("#celebrationCanvas");
+    const celebrationCtx = celebrationCanvas.getContext("2d");
+    let particles = [];
+    let celebrationFrame;
+    let celebrationEnd = 0;
+
+    function resizeCelebrationCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      celebrationCanvas.width = window.innerWidth * dpr;
+      celebrationCanvas.height = window.innerHeight * dpr;
+      celebrationCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener("resize", resizeCelebrationCanvas);
+    resizeCelebrationCanvas();
+
+    function addBurst(x, y) {
+      const colors = ["#ed6b91", "#ffd34e", "#8d7af5", "#72c9a1", "#ff8b5e"];
+
+      for (let i = 0; i < 28; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 230;
+
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          size: 3 + Math.random() * 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          kind: Math.random() < 0.25 ? "heart" : "confetti"
+        });
+      }
+    }
+
+    function drawCelebration(timestamp) {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      celebrationCtx.clearRect(0, 0, width, height);
+
+      // Feuerwerksbursts starten abwechselnd von beiden Seiten.
+      if (Math.random() < 0.12) {
+        const fromLeft = Math.random() < 0.5;
+        addBurst(
+          fromLeft ? 16 : width - 16,
+          height * (0.2 + Math.random() * 0.55)
+        );
+      }
+
+      particles = particles.filter(particle => particle.life > 0);
+
+      for (const particle of particles) {
+        particle.x += particle.vx * 0.016;
+        particle.y += particle.vy * 0.016;
+        particle.vy += 90 * 0.016;
+        particle.life -= 0.009;
+
+        celebrationCtx.globalAlpha = Math.max(0, particle.life);
+        celebrationCtx.fillStyle = particle.color;
+
+        if (particle.kind === "heart") {
+          celebrationCtx.font = `${particle.size * 3}px system-ui`;
+          celebrationCtx.fillText("💖", particle.x, particle.y);
+        } else {
+          celebrationCtx.save();
+          celebrationCtx.translate(particle.x, particle.y);
+          celebrationCtx.rotate(particle.life * 8);
+          celebrationCtx.fillRect(
+            -particle.size / 2,
+            -particle.size / 2,
+            particle.size,
+            particle.size * 1.7
+          );
+          celebrationCtx.restore();
+        }
+      }
+
+      celebrationCtx.globalAlpha = 1;
+
+      if (timestamp < celebrationEnd) {
+        celebrationFrame = requestAnimationFrame(drawCelebration);
+      } else {
+        celebrationCtx.clearRect(0, 0, width, height);
+        particles = [];
+      }
+    }
+
+    document.querySelector("#yesButton").addEventListener("click", () => {
+      document.querySelector("#finalButtons").hidden = true;
+      document.querySelector("#yesMessage").hidden = false;
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      addBurst(12, height * 0.35);
+      addBurst(width - 12, height * 0.35);
+      addBurst(12, height * 0.7);
+      addBurst(width - 12, height * 0.7);
+
+      cancelAnimationFrame(celebrationFrame);
+      celebrationEnd = performance.now() + 7000;
+      celebrationFrame = requestAnimationFrame(drawCelebration);
     });
   </script>
 </body>
