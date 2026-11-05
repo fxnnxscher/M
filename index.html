@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eine wichtige Frage 💌</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #542b3b;
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #ffe2ec, #fff5dc);
+    }
+
+    main {
+      width: min(100%, 520px);
+      padding: 32px 24px;
+      text-align: center;
+      background: #ffffffde;
+      border: 1px solid #fff;
+      border-radius: 24px;
+      box-shadow: 0 16px 50px #85435b20;
+    }
+
+    .heart { font-size: 44px; }
+    h1 { margin: 8px 0; font-size: clamp(26px, 7vw, 36px); }
+    p { line-height: 1.6; }
+
+    #actions {
+      position: relative;
+      height: 110px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 24px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 5px 14px #542b3b20;
+    }
+
+    #yes {
+      position: absolute;
+      top: 20px;
+      left: 15%;
+      color: white;
+      background: #ed6b91;
+    }
+
+    #no {
+      position: absolute;
+      top: 20px;
+      right: 15%;
+      color: #542b3b;
+      background: #f3e7ec;
+    }
+
+    #success { display: none; }
+    #success h1 { color: #d34f7a; }
+
+    hr {
+      margin: 28px 0 20px;
+      border: 0;
+      border-top: 1px solid #f1dce4;
+    }
+
+    #share input {
+      width: 100%;
+      margin: 8px 0;
+      padding: 11px;
+      border: 1px solid #e8cbd6;
+      border-radius: 10px;
+      font: inherit;
+    }
+
+    #makeQr {
+      color: white;
+      background: #75445a;
+    }
+
+    #qr { margin-top: 16px; }
+    #qr canvas { max-width: 100%; }
+    #status { min-height: 1.5em; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="question">
+      <div class="heart">💌</div>
+      <p>Ich habe eine kleine, aber ziemlich wichtige Frage für dich …</p>
+      <h1>Willst du meine Freundin sein?</h1>
+      <p>Versprochen: Mit mir gibt’s gute Snacks und mittelgute Wortwitze.</p>
+
+      <div id="actions">
+        <button id="yes">Ja! 💖</button>
+        <button id="no">Nein 🙈</button>
+      </div>
+    </section>
+
+    <section id="success">
+      <div class="heart">🎉🥰🎉</div>
+      <h1>Yay! Du hast Ja gesagt!</h1>
+      <p>Damit bist du jetzt offiziell meine Lieblingsperson.<br>
+        Einlösbar gegen eine Umarmung und einen Snack deiner Wahl. 💕</p>
+    </section>
+
+    <hr>
+
+    <section id="share">
+      <strong>QR-Code für diese Seite erstellen</strong>
+      <p>Gib hier den öffentlichen Hosting-Link ein und erstelle den QR-Code.</p>
+      <input id="pageUrl" type="url" placeholder="https://deinname.github.io/projekt/">
+      <button id="makeQr">QR-Code erstellen</button>
+      <div id="qr"></div>
+      <div id="status"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    const noButton = document.querySelector("#no");
+    const actions = document.querySelector("#actions");
+
+    function moveNoButton() {
+      const buttonWidth = noButton.offsetWidth;
+      const buttonHeight = noButton.offsetHeight;
+      const minLeft = Math.min(actions.clientWidth * 0.52, actions.clientWidth - buttonWidth);
+      const maxLeft = actions.clientWidth - buttonWidth;
+      const maxTop = actions.clientHeight - buttonHeight;
+
+      noButton.style.right = "auto";
+      noButton.style.left = `${minLeft + Math.random() * Math.max(0, maxLeft - minLeft)}px`;
+      noButton.style.top = `${Math.random() * Math.max(0, maxTop)}px`;
+    }
+
+    noButton.addEventListener("mouseenter", moveNoButton);
+    noButton.addEventListener("click", moveNoButton);
+
+    document.querySelector("#yes").addEventListener("click", () => {
+      document.querySelector("#question").style.display = "none";
+      document.querySelector("#success").style.display = "block";
+    });
+
+    const pageUrl = document.querySelector("#pageUrl");
+    if (location.protocol === "https:" || location.protocol === "http:") {
+      pageUrl.value = location.href;
+    }
+
+    document.querySelector("#makeQr").addEventListener("click", async () => {
+      const status = document.querySelector("#status");
+      const qr = document.querySelector("#qr");
+      const url = pageUrl.value.trim();
+
+      qr.replaceChildren();
+
+      if (!url || !/^https?:\/\//i.test(url)) {
+        status.textContent = "Bitte gib einen gültigen öffentlichen http(s)-Link ein.";
+        return;
+      }
+
+      if (!window.QRCode) {
+        status.textContent = "Der QR-Code-Dienst konnte nicht geladen werden. Prüfe deine Internetverbindung.";
+        return;
+      }
+
+      try {
+        const canvas = document.createElement("canvas");
+        await QRCode.toCanvas(canvas, url, { width: 220, margin: 2 });
+        qr.appendChild(canvas);
+        status.textContent = "Fertig! Der QR-Code führt zu deiner Seite.";
+      } catch {
+        status.textContent = "Der QR-Code konnte nicht erstellt werden.";
+      }
+    });
+  </script>
+</body>
+</html>
