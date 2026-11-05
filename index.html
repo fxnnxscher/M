@@ -85,14 +85,14 @@
   <main>
     <section id="startScreen" class="screen active">
       <div class="emoji">💌</div>
-      <h1>Eine kleine Mission</h1>
-      <p>Ein paar Hindernisse, ein paar Fragen und am Ende wartet etwas Wichtiges auf dich.</p>
+      <h1>Eine kleine Mission, <br>aber ein großer Schritt</h1>
+      <p>Ein kleines feines Spiel über Brokkoli und Curry Paste.</p>
       <button id="startButton">Spiel starten ✨</button>
     </section>
 
     <section id="gameScreen" class="screen">
-      <h1>Flieg zum Herzen!</h1>
-      <p>Tippe auf das Spielfeld, um zu fliegen. Schaffst du 10 Punkte?</p>
+      <h1>Schaffst du 10 Punkte?</h1>
+      <p>Tippe auf das Spielfeld, um zu fliegen.</p>
       <canvas id="game" width="360" height="500" aria-label="Flappy-Herz-Spiel"></canvas>
       <p id="gameStatus" class="hint">Tippe oder klicke zum Fliegen.</p>
       <button id="gameAction" hidden></button>
@@ -135,19 +135,19 @@
     // correctIndex zählt ab 0: 0 = erste Antwort, 1 = zweite usw.
     const quizQuestions = [
       {
-        question: "Was würde ich bei einem gemütlichen Abend eher wählen?",
-        answers: ["Pizza 🍕", "Sushi 🍣", "Tacos 🌮"],
-        correctIndex: 0
+        question: "Was ist mein Latzug PR?",
+        answers: ["90 kg", "100 kg", "110 kg"],
+        correctIndex: 1
       },
       {
-        question: "Welches Dessert würde ich am ehesten nehmen?",
-        answers: ["Eis 🍦", "Kuchen 🍰", "Obstsalat 🍓"],
-        correctIndex: 0
-      },
-      {
-        question: "Was wäre mein perfekter gemeinsamer Ausflug?",
-        answers: ["Ein Spaziergang 🌳", "Ein Filmabend 🎬", "Ein Abenteuer ✨"],
+        question: "Welcher Whey Geschmack ist mein Favorit?",
+        answers: ["Eiskaffee", "Milchschokolade", "Weiße Schokolade"],
         correctIndex: 2
+      },
+      {
+        question: "Was ist mein Lieblingsgericht?",
+        answers: ["Nudeln mit Pesto", "Garnelen-Sahne-Pasta", "Hühnchen mit Reis"],
+        correctIndex: 1
       }
     ];
 
@@ -246,7 +246,7 @@
 
       if (won && timestamp - victoryStartedAt > 900) {
         gameRunning = false;
-        gameStatus.textContent = "Du bist ins Herz geflogen! 💖";
+        gameStatus.textContent = "Du hast es geschafft!";
         gameAction.textContent = "Weiter zum Quiz →";
         gameAction.hidden = false;
         gameAction.onclick = startQuiz;
