@@ -139,7 +139,7 @@
       <h1 class="reveal" data-delay="2000">Willst du meine Freundin sein?</h1>
       <p class="reveal" data-delay="4000">
         Ich bin nicht nur beim Training dein Spotter sondern auch im Alltag möchte ich gerne derjenige sein,
-        der dir den Rücken freihält (oder die Gewichte) <br> <p>:)</p>
+        der dir den Rücken freihält - oder die Gewichte :)
       </p>
       <div id="finalButtons" class="reveal" data-delay="6000">
         <button id="yesButton">Ja! 💖</button>
@@ -441,10 +441,8 @@
     const noButton = document.querySelector("#noButton");
 
     function moveNoButton(event) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      event.preventDefault();
+      event.stopPropagation();
 
       const margin = 12;
       const maxLeft = Math.max(margin, window.innerWidth - noButton.offsetWidth - margin);
@@ -457,6 +455,7 @@
     }
 
     noButton.addEventListener("pointerenter", moveNoButton);
+    noButton.addEventListener("pointerdown", moveNoButton);
     noButton.addEventListener("click", moveNoButton);
 
     // --- Ja: Feier auf derselben Seite ---
