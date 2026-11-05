@@ -10,8 +10,8 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      min-height: 100svh;
+      display: flex;
       padding: 18px;
       color: #542b3b;
       font-family: system-ui, sans-serif;
@@ -19,6 +19,7 @@
     }
 
     main {
+      margin: auto;
       width: min(100%, 500px);
       padding: 28px 22px;
       text-align: center;
@@ -100,6 +101,40 @@
       pointer-events: none;
     }
 
+    #celebrationLayer {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .flying-heart {
+      position: absolute;
+      top: var(--top);
+      font-size: 30px;
+      opacity: 0;
+      animation: fly-heart 1.8s ease-out var(--delay) forwards;
+      will-change: transform, opacity;
+    }
+
+    .flying-heart.left {
+      left: -40px;
+      --shift: 42vw;
+    }
+
+    .flying-heart.right {
+      right: -40px;
+      --shift: -42vw;
+    }
+
+    @keyframes fly-heart {
+      0% { opacity: 0; transform: translateX(0) scale(.7); }
+      15% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(var(--shift)) scale(1.1); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .reveal { transition: none; }
     }
@@ -141,7 +176,7 @@
         Ich möchte nicht nur beim Training dein Spotter sondern auch im Alltag möchte ich gerne derjenige sein,
         der dir den Rücken freihält - oder die Gewichte :)
       </p>
-      <div id="finalButtons" class="reveal" data-delay="6000">
+      <div id="finalButtons">
         <button id="yesButton">Ja! 💖</button>
         <button id="noButton" class="secondary">Nein 🙈</button>
       </div>
@@ -150,6 +185,7 @@
   </main>
 
   <canvas id="celebrationCanvas" aria-hidden="true"></canvas>
+  <div id="celebrationLayer" aria-hidden="true"></div>
 
   <script>
     // Passe Fragen, Antwortmöglichkeiten und correctIndex an dich an.
@@ -437,12 +473,11 @@
       document.querySelector("#yesMessage").hidden = true;
     }
 
-    // Der Nein-Button springt an eine andere Stelle im sichtbaren Fenster.
+    // --- Nein-Button: sichtbar, aber er springt weg ---
     const noButton = document.querySelector("#noButton");
 
     function moveNoButton(event) {
       event.preventDefault();
-      event.stopPropagation();
 
       const margin = 12;
       const maxLeft = Math.max(margin, window.innerWidth - noButton.offsetWidth - margin);
@@ -456,7 +491,26 @@
 
     noButton.addEventListener("pointerenter", moveNoButton);
     noButton.addEventListener("pointerdown", moveNoButton);
-    noButton.addEventListener("click", moveNoButton);
+
+    // --- Ja: wenige Herzen fliegen von beiden Seiten herein ---
+    document.querySelector("#yesButton").addEventListener("click", () => {
+      document.querySelector("#finalButtons").hidden = true;
+      document.querySelector("#yesMessage").hidden = false;
+
+      const layer = document.querySelector("#celebrationLayer");
+      const hearts = ["💖", "💕", "❤️"];
+
+      for (let i = 0; i < 6; i++) {
+        const heart = document.createElement("span");
+        heart.className = `flying-heart ${i % 2 === 0 ? "left" : "right"}`;
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        heart.style.setProperty("--top", `${25 + Math.random() * 50}vh`);
+        heart.style.setProperty("--delay", `${Math.floor(i / 2) * 180}ms`);
+        layer.appendChild(heart);
+
+        heart.addEventListener("animationend", () => heart.remove(), { once: true });
+      }
+    });
 
     // --- Ja: Feier auf derselben Seite ---
     const celebrationCanvas = document.querySelector("#celebrationCanvas");
