@@ -59,6 +59,15 @@
     .screen { display: none; }
     .screen.active { display: block; }
 
+    .category-number {
+      margin: 0;
+      color: #b94f73;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
     canvas#game {
       display: block;
       width: min(100%, 360px);
@@ -145,8 +154,16 @@
     <section id="startScreen" class="screen active">
       <div class="emoji"></div>
       <h1>Eine Mission</h1>
-      <p>Ein kleines feines Spiel zum testen deiner Gaming Skills mit einem kleinen Quiz.</p>
+      <p>Ein bisschen von Allem. Schaffst du es bis zum Ende durchzuhalten?</p>
       <button id="startButton">Spiel starten</button>
+    </section>
+
+    <section id="categoryScreen" class="screen">
+      <div class="emoji">✨</div>
+      <p id="categoryNumber" class="category-number"></p>
+      <h1 id="categoryTitle"></h1>
+      <p id="categoryDescription"></p>
+      <button id="categoryContinue">Weiter</button>
     </section>
 
     <section id="gameScreen" class="screen">
@@ -166,12 +183,18 @@
       <button id="nextQuestion" hidden>Weiter</button>
     </section>
 
+    <section id="matchScreen" class="screen">
+      <div class="emoji">💞</div>
+      <h1>Das scheint ja wohl richtig gut zu matchen &lt;3</h1>
+      <button id="matchContinue">Weiter</button>
+    </section>
+
     <section id="finalScreen" class="screen">
       <div class="emoji reveal" data-delay="0">💌</div>
       <p class="reveal" data-delay="0">
-        Du hast es bis hierher geschafft. Jetzt kommt die wichtigste Frage …
+        Daher möchte ich dir jetzt eine wichtige Frage stellen …
       </p>
-      <h1 class="reveal" data-delay="2000">Willst du meine Freundin sein?</h1>
+      <h1 class="reveal" data-delay="2000">Willst du ganz offiziell ab heute (07.11. oder 08.11.2026 kommt drauf an wann du das beantwortest) meine Freundin sein?</h1>
       <p class="reveal" data-delay="4000">
         Ich möchte nicht nur beim Training dein Spotter sondern auch im Alltag möchte ich gerne derjenige sein,
         der dir den Rücken freihält - oder die Gewichte :)
@@ -188,23 +211,34 @@
   <div id="celebrationLayer" aria-hidden="true"></div>
 
   <script>
-    // Passe Fragen, Antwortmöglichkeiten und correctIndex an dich an.
-    // correctIndex zählt ab 0: 0 = erste Antwort, 1 = zweite usw.
     const quizQuestions = [
       {
-        question: "Was ist mein Latzug PR?",
-        answers: ["90 kg", "100 kg", "110 kg"],
-        correctIndex: 1
+        question: "Was ist die größte Angst eines Orks?",
+        answers: [
+          "a) Ein noch größerer Ork, der ihm Befehle gibt",
+          "b) Radagast der Braune",
+          "c) Gollums zweite Persönlichkeit"
+        ],
+        correctIndex: 0
       },
       {
-        question: "Welcher Whey-Geschmack ist mein Favorit?",
-        answers: ["Eiskaffee", "Milchschokolade", "Weiße Schokolade"],
+        question: "Wer hat sieben Bücher lang versucht, Harry das Leben schwer zu machen, obwohl er eigentlich nur einen Crush auf seine Mutter hatte?",
+        answers: [
+          "a) Professor Quirrell",
+          "b) Lucius Malfoy",
+          "c) Snape"
+        ],
         correctIndex: 2
       },
       {
-        question: "Was ist mein Lieblingsgericht?",
-        answers: ["Nudeln mit Pesto", "Garnelen-Sahne-Pasta", "Hühnchen mit Reis"],
+        question: "Wie viel PR-Gewicht haben wir zusammen bei Rudern am Kabelturm?",
+        answers: ["a) 170 kg", "b) 180 kg", "c) 160 kg"],
         correctIndex: 1
+      },
+      {
+        question: "Was sind unsere Lieblingsfarben? 😉",
+        answers: ["a) Blau und Rosa", "b) Grün und Rot", "c) Weiß und Orange"],
+        correctIndex: 2
       }
     ];
 
@@ -214,7 +248,38 @@
       screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
     }
 
-    document.querySelector("#startButton").addEventListener("click", startGame);
+    const categoryDetails = {
+      1: {
+        title: "Gaming",
+        description: "Schaffst du es, den Vogel sicher an sein Ziel zu bringen?"
+      },
+      2: {
+        title: "Filme und Serien",
+        description: "Kennst du alle Antworten auf die kniffligen Fragen – knifflig, weil du immer Kniffel dabei hast :)"
+      },
+      3: {
+        title: "Match oder Match",
+        description: "Wie sehr matchen wir?"
+      }
+    };
+
+    let activeCategory = 1;
+
+    function showCategory(category) {
+      activeCategory = category;
+      const details = categoryDetails[category];
+      document.querySelector("#categoryNumber").textContent = `${category}. Kategorie:`;
+      document.querySelector("#categoryTitle").textContent = details.title;
+      document.querySelector("#categoryDescription").textContent = details.description;
+      showScreen("categoryScreen");
+    }
+
+    document.querySelector("#startButton").addEventListener("click", () => showCategory(1));
+    document.querySelector("#categoryContinue").addEventListener("click", () => {
+      if (activeCategory === 1) startGame();
+      if (activeCategory === 2) startQuiz(0);
+      if (activeCategory === 3) startQuiz(2);
+    });
 
     // --- Flappy-Bird-Spiel ---
     const canvas = document.querySelector("#game");
@@ -308,7 +373,7 @@
         gameStatus.textContent = "Du hast es geschafft!";
         gameAction.textContent = "Weiter zum Quiz →";
         gameAction.hidden = false;
-        gameAction.onclick = startQuiz;
+        gameAction.onclick = () => showCategory(2);
       }
 
       if (gameRunning || won) {
@@ -407,8 +472,8 @@
     const feedbackElement = document.querySelector("#quizFeedback");
     const nextButton = document.querySelector("#nextQuestion");
 
-    function startQuiz() {
-      questionIndex = 0;
+    function startQuiz(startIndex) {
+      questionIndex = startIndex;
       showScreen("quizScreen");
       renderQuestion();
     }
@@ -416,8 +481,9 @@
     function renderQuestion() {
       const item = quizQuestions[questionIndex];
 
+      const categoryStart = questionIndex < 2 ? 0 : 2;
       document.querySelector("#quizProgress").textContent =
-        `Frage ${questionIndex + 1} von ${quizQuestions.length}`;
+        `Frage ${questionIndex - categoryStart + 1} von 2`;
       document.querySelector("#quizQuestion").textContent = item.question;
       answersElement.replaceChildren();
       feedbackElement.textContent = "";
@@ -429,14 +495,14 @@
         button.textContent = answer;
 
         button.addEventListener("click", () => {
-          answersElement.querySelectorAll("button")
-            .forEach(option => option.disabled = true);
-
-          feedbackElement.textContent = index === item.correctIndex
-            ? "Richtig! Strong gespielt 💪"
-            : "Nicht ganz — aber netter Versuch 😄";
-
-          nextButton.hidden = false;
+          if (index === item.correctIndex) {
+            answersElement.querySelectorAll("button")
+              .forEach(option => option.disabled = true);
+            feedbackElement.textContent = "Richtig! Strong gespielt 💪";
+            nextButton.hidden = false;
+          } else {
+            feedbackElement.textContent = "Netter Versuch... 😄";
+          }
         });
 
         answersElement.appendChild(button);
@@ -444,14 +510,19 @@
     }
 
     nextButton.addEventListener("click", () => {
-      questionIndex++;
-
-      if (questionIndex < quizQuestions.length) {
-        renderQuestion();
+      if (questionIndex === 1) {
+        showCategory(3);
+      } else if (questionIndex === 3) {
+        showScreen("matchScreen");
       } else {
-        showScreen("finalScreen");
-        revealFinalQuestion();
+        questionIndex++;
+        renderQuestion();
       }
+    });
+
+    document.querySelector("#matchContinue").addEventListener("click", () => {
+      showScreen("finalScreen");
+      revealFinalQuestion();
     });
 
     // Die Hauptfrage erscheint nacheinander mit jeweils zwei Sekunden Abstand.
