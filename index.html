@@ -560,8 +560,12 @@
       noButton.style.top = `${margin + Math.random() * (maxTop - margin)}px`;
     }
 
-    noButton.addEventListener("pointerenter", moveNoButton);
-    noButton.addEventListener("pointerdown", moveNoButton);
+    noButton.addEventListener("pointerenter", event => {
+      if (event.pointerType !== "touch") moveNoButton(event);
+    });
+    noButton.addEventListener("pointerdown", event => {
+      if (event.pointerType === "touch") moveNoButton(event);
+    });
 
     // --- Ja: wenige Herzen fliegen von beiden Seiten herein ---
     document.querySelector("#yesButton").addEventListener("click", () => {
